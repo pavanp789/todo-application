@@ -16,7 +16,7 @@ const sessionStore = new MySQLStore({}, pool);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://todo-application-api-j4nk.onrender.com",
     credentials: true
   })
 );
