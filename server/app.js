@@ -14,10 +14,25 @@ const app = express();
 
 const sessionStore = new MySQLStore({}, pool);
 
+
+// Required on Render (it sits behind a proxy), otherwise secure cookies won't be set
+app.set("trust proxy", 1);
+
+const allowedOrigins = [
+  "https://todo-application-eight-theta.vercel.app",
+  "http://localhost:5173", // local dev (Vite). Change to 3000 if using CRA
+];
+
 app.use(
   cors({
-    origin: "https://todo-application-api-j4nk.onrender.com",
-    credentials: true
+    origin: (origin, callback) => {
+      // allow curl/Postman (no origin) and listed frontends
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
   })
 );
 
@@ -30,14 +45,17 @@ app.use(
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000
-    }
+      secure: process.env.NODE_ENV === "production", // true on Render
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   })
 );
+
+
 
 app.get("/api/health", async (req, res) => {
   try {
